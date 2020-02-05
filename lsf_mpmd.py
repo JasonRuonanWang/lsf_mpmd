@@ -5,47 +5,56 @@ ranksPerNode = 40
 cpusPerRank = 4
 
 params={}
-params["cpu_index_using"] = "physical"
 params["overlapping_rs"] = "warn"
-params["skip_missing_cpu"] = "warn"
-params["skip_missing_gpu"] = "allow"
-params["skip_missing_mem"] = "allow"
-params["oversubscribe_cpu"] = "error"
-params["oversubscribe_gpu"] = "allow"
+params["oversubscribe_cpu"] = "warn"
 params["oversubscribe_mem"] = "allow"
+params["oversubscribe_gpu"] = "allow"
 params["launch_distribution"] = "packed"
 
 rankCurrent = 0
 appCurrent = 0
 cpuCurrent = 0
+nodes = 0
 
+appsFullPath = []
 apps = []
 ranks = []
 
+filename = ""
+
 for arg in range(1, len(sys.argv), 2):
-    apps.append(os.getcwd() + "/" + sys.argv[arg])
+    appsFullPath.append(os.getcwd() + "/" + sys.argv[arg])
+    apps.append(sys.argv[arg])
     ranks.append(int(sys.argv[arg+1]))
+    filename = filename + sys.argv[arg] + sys.argv[arg+1]
 
 ranksTotal = sum(ranks)
 
-file1 = open("job.erf","w")
+fileErf = open(filename + ".erf","w")
+fileJob = open(filename + ".job","w")
 
 s = 0
-for app in apps:
-    file1.write("app {0}: {1}".format(s, app) + "\n")
+for app in appsFullPath:
+    fileErf.write("app {0}: {1}".format(s, app) + "\n")
     s = s + 1
 
 for key, value in params.items():
-    file1.write(key + ": " + value + "\n")
+    fileErf.write(key + ": " + value + "\n")
 
 for app in ranks:
     for rank in range(app):
         if rankCurrent % ranksPerNode == 0:
             cpuCurrent = 0
-        host = int(rankCurrent / ranksPerNode)
-        line = "rank: {0}: {{ host: {1}; cpu: {{{2}-{3}}} }} : app {4}".format(rankCurrent, host, cpuCurrent, cpuCurrent + 3, appCurrent)
-        file1.write(line + "\n")
+            nodes = nodes + 1
+        line = "rank: {0}: {{ host: {1}; cpu: {{{2}-{3}}} }} : app {4}".format(rankCurrent, nodes, cpuCurrent, cpuCurrent + 3, appCurrent)
+        fileErf.write(line + "\n")
         cpuCurrent = cpuCurrent + cpusPerRank
         rankCurrent = rankCurrent + 1
     appCurrent = appCurrent + 1
 
+fileJob.write("#!/bin/bash" + "\n")
+fileJob.write("#BSUB -P CSC143" + "\n")
+fileJob.write("#BSUB -W 2:00" + "\n")
+fileJob.write("#BSUB -nnodes {0}".format(nodes) + "\n")
+fileJob.write("cd {0}".format(os.getcwd()) + "\n")
+fileJob.write("jsrun --erf_input {0}/{1}.erf".format(os.getcwd(),filename) + "\n")
