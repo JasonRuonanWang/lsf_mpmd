@@ -1,6 +1,8 @@
 import sys
 import os
 
+project = "CSC143"
+
 ranksPerNode = 40
 cpusPerRank = 4
 
@@ -53,7 +55,8 @@ for app in ranks:
     appCurrent = appCurrent + 1
 
 fileJob.write("#!/bin/bash" + "\n")
-fileJob.write("#BSUB -P CSC143" + "\n")
+fileJob.write("#BSUB -P {0}".format(project) + "\n")
+fileJob.write("#BSUB -J job_{0}".format(filename) + "\n")
 fileJob.write("#BSUB -W 2:00" + "\n")
 fileJob.write("#BSUB -nnodes {0}".format(nodes) + "\n")
 fileJob.write("cd {0}".format(os.getcwd()) + "\n")
