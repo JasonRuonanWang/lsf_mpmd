@@ -51,6 +51,8 @@ for app in ranks:
         line = "rank: {0}: {{ host: {1}; cpu: {{{2}-{3}}} }} : app {4}".format(rankCurrent, nodes, cpuCurrent, cpuCurrent + 3, appCurrent)
         fileErf.write(line + "\n")
         cpuCurrent = cpuCurrent + cpusPerRank
+        if cpuCurrent == 84:
+            cpuCurrent = 88
         rankCurrent = rankCurrent + 1
     appCurrent = appCurrent + 1
 
